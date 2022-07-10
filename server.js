@@ -235,7 +235,7 @@ routerCarrito.delete('/:id/productos/:id_prod', (req,res)=> {
 app.use('/api/productos',routerProductos)
 app.use('/api/carrito',routerCarrito)
 
-const PORT = 3060
+const PORT = 8080
 const server = app.listen(PORT , ()=> {
     console.log(`Server running on port ${PORT}`)
 })
