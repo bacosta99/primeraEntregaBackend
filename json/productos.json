@@ -1,0 +1,29 @@
+[
+    {
+      "title": "Play Station 3",
+      "price": 699,
+      "thumbnail": "N/A",
+      "code": "CONS03",
+      "description": "Play Station 3 Negra",
+      "stock": 27,
+      "id": 1
+    },
+    {
+      "title": "Play Station 4",
+      "price": 999,
+      "thumbnail": "N/A",
+      "code": "CONS04",
+      "description": "Play Station 4 Azul",
+      "stock": 42,
+      "id": 2
+    },
+    {
+      "title": "Play Station 5",
+      "price": 1599,
+      "thumbnail": "N/A",
+      "code": "CONS05",
+      "description": "Play Station 5 Blanca",
+      "stock": 151,
+      "id": 3
+    }
+]
