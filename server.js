@@ -21,7 +21,7 @@ productosRoute.loadArray(productos)
 const carritos = []
 carritosRoute.loadArray(carritos)
 
-
+// clase carrito
 class Carrito {
     constructor (id,timestamp,productos) {
         this.id = id
