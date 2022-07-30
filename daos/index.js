@@ -3,7 +3,7 @@ import { CarritosMongoDB } from "./carritos/CarritoMongoDB.js"
 import { ProductosFireBase } from "./productos/ProductosFireBase.js"
 import { CarritoFireBase } from "./carritos/CarritoFireBase.js"
 
-const db = 'firebase'  //PROCESS.ENV.TIPO_DB ||
+const db = 'mongodb'  //PROCESS.ENV.TIPO_DB ||
 
 let productoDao 
 let carritoDao
