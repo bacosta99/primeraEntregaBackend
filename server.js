@@ -1,10 +1,8 @@
 import express from 'express'
+
 const {Router} = express
 
-import {Contenedor} from './Contenedor.js'
-
-const productosRoute = new Contenedor('./json/productos.json')
-const carritosRoute = new Contenedor('./json/carritos.json')
+import { productoDao, carritoDao } from './daos/index.js'
 
 const app = express()
 const routerProductos = Router()
@@ -13,221 +11,97 @@ const routerCarrito = Router()
 app.use(express.json())
 app.use(express.urlencoded({extended:true}))
 
-const admin = true
-
-const productos = []
-productosRoute.loadArray(productos)
-
-const carritos = []
-carritosRoute.loadArray(carritos)
-
-// clase carrito
-class Carrito {
-    constructor (id,timestamp,productos) {
-        this.id = id
-        this.timestamp = timestamp
-        this.productos = productos
-    }
-}
-
-class NuevoProducto {
-    constructor (id, timestamp, title, price, thumbnail, code, description, stock) {
-        this.id = id
-        this.timestamp = timestamp
-        this.title = title
-        this.price = price
-        this.thumbnail = thumbnail
-        this.code = code
-        this.description = description
-        this.stock = stock
-    }
-}
+const isAdmin = true
 
 //productos
 
-routerProductos.get('/:id?', (req,res)=> {
-    let id = parseInt(req.params.id)
-    if (!isNaN(id)) {
-        const foundProduct = productos.find(x => x.id === id)
-        if (!foundProduct) {
-            res.send({error: "No hay un producto con este ID en la base de datos"})
-        } else {
-            res.json(foundProduct)
-        }
-    }
-    else {
-        if (!req.params.id) {    // si es undefined, se muestran todos los productos
-            res.json(productos)
-        } else {
-            res.send({error: "El ID indicado no es un caracter valido"})
-        }
-    }
+routerProductos.get('/:id?', async (req,res)=> {
+    let id = req.params.id
+    const productos = await productoDao.findById(id)
+    res.send(productos)
 })
 
-routerProductos.post('/', (req,res)=> {
-    if(admin) {
+routerProductos.post('/', async (req,res)=> {
+    if(isAdmin) {
         let producto = req.body
-        const idList = []
-        productos.forEach(element => {
-            idList.push(parseInt(element.id))
-        })
-        const id = Math.max(...idList) + 1
-        producto.id = id
-        productos.push(producto)
-        productosRoute.update(productos)
-        res.json(productos)
+        await productoDao.create(producto)
+        res.send(producto)
     } else {
         res.send({error: "Disculpa amigo, no sos admin"})
     }
 })
 
-routerProductos.put('/:id', (req,res)=> {
-    if(admin) {
+routerProductos.put('/:id', async (req,res)=> {
+    if(isAdmin) {
         let producto = req.body
-        let id = parseInt(req.params.id)
-        if (!isNaN(id)) {
-            const foundProduct = productos.find(x => x.id === id)
-            if (typeof foundProduct === 'undefined') {
-                res.send({error: "No hay un producto con este ID en la base de datos"})
-            } else {
-                let {title, price, thumbnail, code, description, stock} = producto
-                const indexToUpdate = productos.indexOf(foundProduct)
-                productos[indexToUpdate].title = title
-                productos[indexToUpdate].price = price
-                productos[indexToUpdate].thumbnail = thumbnail
-                productos[indexToUpdate].code = code
-                productos[indexToUpdate].description = description
-                productos[indexToUpdate].stock = stock
-                productosRoute.update(productos)
-                res.json(productos)
-            }
-        }
+        let id = req.params.id
+        const updated = await productoDao.update(id, producto)
+        res.send(updated)
     } else {
         res.send({error: "Disculpa amigo, no sos admin"})
     }
 })
 
-routerProductos.delete('/:id', (req,res)=> {
-    if(admin) {
+routerProductos.delete('/:id', async (req,res)=> {
+    if(isAdmin) {
         let id = parseInt(req.params.id)
-        if (!isNaN(id)) {
-            const foundProduct = productos.find(x => x.id === id)
-            if (!foundProduct) {
-                res.send({error: "No hay un producto con este ID en la base de datos"})
-            } else {
-                const indexToDelete = productos.indexOf(foundProduct)
-                productos.splice(indexToDelete,1)
-                productosRoute.update(productos)
-                res.json({res: `Se ha eliminado el objeto con id: ${id}`})
-            }
-        }
-        else {
-            res.send({error: "El ID indicado no es un caracter valido"})
-        }
+        const deleted = await productoDao.delete(id)
+        res.send(deleted)
     } else {
-        res.send({error: "Disculpa amigo, no sos admin"})
+        res.send({error: "Disculpa amigo, no sos isAdmin"})
     }
 })
 
 // carrito
 
-routerCarrito.post('/', (req,res)=> {
-    const idList = []
-    let id
-    if(carritos.length === 0) {
-        id = 1
-    } else {
-        carritos.forEach(element => {
-            idList.push(parseInt(element.id))
-        })
-        id = Math.max(...idList) + 1
-    }
-    carritos.push(new Carrito(id,Date.now(),[]))
-    carritosRoute.update(carritos)
-    res.json(carritos)
+routerCarrito.post('/', async (req,res)=> {
+    let carritoBlank = {timestamp: Date.now(), productos: []}
+    const created = await carritoDao.create(carritoBlank)
+    res.json({esto: created})
 })
 
-routerCarrito.delete('/:id', (req,res)=> {
+routerCarrito.delete('/:id', async (req,res)=> {
     let id = parseInt(req.params.id)
-    if (!isNaN(id)) {
-        const foundCart = carritos.find(x => x.id === id)
-        if (!foundCart) {
-            res.send({error: "No hay un carrito con este ID en la base de datos"})
-        } else {
-            const indexToDelete = carritos.indexOf(foundCart)
-            carritos.splice(indexToDelete,1)
-            carritosRoute.update(carritos)
-            res.send({res: `Se ha eliminado el carrito con id: ${id}`, carrito: carritos})
-        }
-    }
-    else {
-        res.send({error: "El ID indicado no es un caracter valido"})
-    }
+    const deleted = await carritoDao.delete(id)
+    res.send(deleted)
 })
 
-routerCarrito.get('/:id/productos', (req,res)=> {
-    let carritoId = parseInt(req.params.id)
-    if (!isNaN(carritoId)) {
-        const foundCart = carritos.find(x => x.id === carritoId)
-        if (!foundCart) {
-            res.send({error: "No hay un carrito con este ID en la base de datos"})
-        } else {
-            const cartIndex = carritos.indexOf(foundCart)
-            res.json(carritos[cartIndex].productos)
-        }
-    } else {
-        res.send({error: "El id de carrito es invalido"})
-    }
+routerCarrito.get('/:id/productos', async (req,res)=> {
+    let id = req.params.id
+    const carritos = await carritoDao.findById(id)
+    res.send(carritos.productos)
 })
 
-routerCarrito.post('/:id/productos', (req,res)=> {
+routerCarrito.get('/:id?', async (req, res) => {
+    let id = req.params.id
+    const carritos = await carritoDao.findById(id)
+    res.send({carritos})
+})
+
+routerCarrito.post('/:id/productos', async (req,res)=> {
     let productoId = req.body.id
     let carritoId = parseInt(req.params.id)
-    if (!isNaN(productoId) && !isNaN(carritoId)) {
-        // obtengo el producto primero, buscando su id en el array productos
-        const foundProduct = productos.find(x => x.id === productoId)
-        if (!foundProduct) {
-            res.send({error: "No hay un producto con este ID en la base de datos"})
-        } else {
-            // busco el carrito
-            const foundCart = carritos.find(x => x.id === carritoId)
-            if (!foundCart) {
-                res.send({error: "No hay un carrito con este ID en la base de datos"})
-            } else {
-                const productToInsert = new NuevoProducto(foundProduct.id,Date.now(),foundProduct.title,foundProduct.price,foundProduct.thumbnail,foundProduct.code,foundProduct.description,foundProduct.stock)
-                const cartIndex = carritos.indexOf(foundCart)
-                carritos[cartIndex].productos.push(productToInsert)
-                carritosRoute.update(carritos)
-                res.json(carritos[cartIndex])
-            }
-        }
+    const foundProduct = await productoDao.findById(productoId)
+    if (!foundProduct.error) {
+        const insertProduct = {id: foundProduct.id, timestamp: Date.now(), title: foundProduct.title, price: foundProduct.price, thumbnail: foundProduct.thumbnail, code: foundProduct.code, description: foundProduct.description, stock: foundProduct.stock} 
+        const updatedCart = await carritoDao.updateCart(carritoId, insertProduct)
+        res.send(updatedCart)
     } else {
-        res.send({error: "El id de carrito o el id de producto contienen un caracter invalido"})
+        res.send(foundProduct.error)
     }
 })
 
-routerCarrito.delete('/:id/productos/:id_prod', (req,res)=> {
-    let carritoId = parseInt(req.params.id)
+routerCarrito.delete('/:id/productos/:id_prod', async (req,res)=> {
     let productoId = parseInt(req.params.id_prod)
-    if (!isNaN(productoId) && !isNaN(carritoId)) {
-        // busco el carrito
-        const foundCart = carritos.find(x => x.id === carritoId)
-        if (!foundCart) {
-            res.send({error: "No hay un carrito con este ID en la base de datos"})
-        } else {
-            const cartIndex = carritos.indexOf(foundCart)
-            const foundProduct = carritos[cartIndex].productos.find(x => x.id === productoId)
-            if (!foundProduct) {
-                res.send({error: "Este articulo no se encuentra en este carrito"})
-            } else {
-                const indexToDelete = carritos[cartIndex].productos.indexOf(foundProduct)
-                carritos[cartIndex].productos.splice(indexToDelete,1)
-                carritosRoute.update(carritos)
-                res.json(carritos[cartIndex])
-            }
-        }
+    let carritoId = parseInt(req.params.id)
+    const foundProduct = await productoDao.checkId(productoId)
+    const foundCart = await carritoDao.checkId(carritoId)
+    if (!!foundCart.error || !!foundProduct.error) {
+        const error = foundCart.error || foundProduct.error
+        res.send(error)
     } else {
-        res.send({error: "El id de carrito o el id de producto contienen un caracter invalido"})
+        const deletedFromCart = await carritoDao.deleteFromCart(carritoId, productoId)
+        res.send(deletedFromCart)
     }
 })
 
@@ -235,7 +109,7 @@ routerCarrito.delete('/:id/productos/:id_prod', (req,res)=> {
 app.use('/api/productos',routerProductos)
 app.use('/api/carrito',routerCarrito)
 
-const PORT = 8080
+const PORT = 3060
 const server = app.listen(PORT , ()=> {
     console.log(`Server running on port ${PORT}`)
 })
